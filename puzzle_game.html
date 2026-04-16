@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼图小游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .setup-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: #e8f0fe;
+        }
+
+        .preview-image {
+            max-width: 300px;
+            max-height: 200px;
+            margin: 20px auto;
+            display: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .difficulty-section {
+            margin: 20px 0;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .difficulty-btn {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            background: white;
+            color: black;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .difficulty-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .difficulty-btn.active {
+            background: white;
+            color: black;
+            border-color: #667eea;
+            font-weight: bold;
+        }
+
+        .game-section {
+            display: none;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .puzzle-container {
+            display: grid;
+            gap: 2px;
+            margin: 20px auto;
+            background: #ddd;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .puzzle-piece {
+            background-size: cover;
+            cursor: pointer;
+            transition: transform 0.3s;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .puzzle-piece:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .puzzle-piece.selected {
+            box-shadow: 0 0 0 3px #667eea;
+            z-index: 20;
+        }
+
+        .puzzle-piece.correct {
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+        }
+
+        .puzzle-piece.incorrect {
+            border-color: #f44336;
+            box-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .completion-section {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .share-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 400px;
+        }
+
+        .share-image {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .completion-info {
+            font-size: 1.2em;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .username-input {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .username-input input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 200px;
+        }
+
+        .username-input button {
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+
+        .leaderboard-section {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .leaderboard-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .leaderboard-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .leaderboard-item:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        .leaderboard-item .rank {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 30px;
+        }
+
+        .leaderboard-item .username {
+            flex: 1;
+            text-align: left;
+            margin: 0 10px;
+        }
+
+        .leaderboard-item .time {
+            color: #666;
+            min-width: 60px;
+        }
+
+        .leaderboard-item .difficulty {
+            color: #666;
+            min-width: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>拼图小游戏</h1>
+        
+        <div class="setup-section" id="setupSection">
+            <div class="upload-area" id="uploadArea">
+                <p>点击或拖拽图片到这里上传</p>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            </div>
+            <img id="previewImage" class="preview-image" alt="预览图片">
+            
+            <div class="difficulty-section">
+                <h3>选择难度</h3>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn" data-rows="3" data-cols="4">3×4 (简单)</button>
+                    <button class="difficulty-btn" data-rows="4" data-cols="4">4×4 (中等)</button>
+                    <button class="difficulty-btn" data-rows="5" data-cols="5">5×5 (困难)</button>
+                    <button class="difficulty-btn" data-rows="6" data-cols="6">6×6 (专家)</button>
+                </div>
+            </div>
+            
+            <button id="startBtn" disabled>开始游戏</button>
+        </div>
+        
+        <div class="game-section" id="gameSection">
+            <div class="timer" id="timer">00:00</div>
+            <div class="puzzle-container" id="puzzleContainer"></div>
+            <div class="controls">
+                <button id="restartBtn">重新开始</button>
+                <button id="newGameBtn">新游戏</button>
+            </div>
+        </div>
+        
+        <div class="completion-section" id="completionSection">
+            <h2>恭喜完成拼图！</h2>
+            <div class="share-card">
+                <img id="shareImage" class="share-image" alt="完成的拼图">
+                <div class="completion-info">难度: <span id="shareDifficulty"></span></div>
+                <div class="completion-info">完成时间: <span id="shareTime"></span></div>
+                
+                <div class="username-input" id="usernameInput">
+                    <input type="text" id="username" placeholder="请输入用户名" maxlength="20">
+                    <button id="saveScoreBtn">保存成绩</button>
+                </div>
+                
+                <div class="leaderboard-section" id="leaderboardSection" style="display: none;">
+                    <h3>排行榜</h3>
+                    <div class="leaderboard-tabs">
+                        <button class="tab-btn active" data-tab="time">按时间排序</button>
+                        <button class="tab-btn" data-tab="difficulty">按难度排序</button>
+                    </div>
+                    <div class="leaderboard-content">
+                        <div id="timeLeaderboard" class="tab-content active"></div>
+                        <div id="difficultyLeaderboard" class="tab-content"></div>
+                    </div>
+                </div>
+                
+                <button id="shareBtn">分享</button>
+                <button id="playAgainBtn">再玩一次</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PuzzleGame {
+            constructor() {
+                this.rows = 0;
+                this.cols = 0;
+                this.pieces = [];
+                this.selectedPiece = null;
+                this.startTime = null;
+                this.timerInterval = null;
+                this.originalImage = null;
+                this.isGameStarted = false;
+                this.correctPieces = new Set();
+                this.leaderboard = this.loadLeaderboard();
+                
+                this.initializeElements();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.imageInput = document.getElementById('imageInput');
+                this.previewImage = document.getElementById('previewImage');
+                this.startBtn = document.getElementById('startBtn');
+                this.difficultyBtns = document.querySelectorAll('.difficulty-btn');
+                this.setupSection = document.getElementById('setupSection');
+                this.gameSection = document.getElementById('gameSection');
+                this.puzzleContainer = document.getElementById('puzzleContainer');
+                this.timer = document.getElementById('timer');
+                this.restartBtn = document.getElementById('restartBtn');
+                this.newGameBtn = document.getElementById('newGameBtn');
+                this.completionSection = document.getElementById('completionSection');
+                this.shareImage = document.getElementById('shareImage');
+                this.shareDifficulty = document.getElementById('shareDifficulty');
+                this.shareTime = document.getElementById('shareTime');
+                this.shareBtn = document.getElementById('shareBtn');
+                this.playAgainBtn = document.getElementById('playAgainBtn');
+                this.usernameInput = document.getElementById('usernameInput');
+                this.username = document.getElementById('username');
+                this.saveScoreBtn = document.getElementById('saveScoreBtn');
+                this.leaderboardSection = document.getElementById('leaderboardSection');
+                this.timeLeaderboard = document.getElementById('timeLeaderboard');
+                this.difficultyLeaderboard = document.getElementById('difficultyLeaderboard');
+                this.tabBtns = document.querySelectorAll('.tab-btn');
+            }
+
+            bindEvents() {
+                this.uploadArea.addEventListener('click', () => this.imageInput.click());
+                this.imageInput.addEventListener('change', (e) => this.handleImageUpload(e));
+                
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.loadImage(files[0]);
+                    }
+                });
+
+                this.difficultyBtns.forEach(btn => {
+                    btn.addEventListener('click', () => this.selectDifficulty(btn));
+                });
+
+                this.startBtn.addEventListener('click', () => this.startGame());
+                this.restartBtn.addEventListener('click', () => this.restartGame());
+                this.newGameBtn.addEventListener('click', () => this.newGame());
+                this.shareBtn.addEventListener('click', () => this.shareResult());
+                this.playAgainBtn.addEventListener('click', () => this.playAgain());
+                
+                this.saveScoreBtn.addEventListener('click', () => this.saveScore());
+                this.username.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.saveScore();
+                });
+                
+                this.tabBtns.forEach(btn => {
+                    btn.addEventListener('click', () => this.switchTab(btn));
+                });
+            }
+
+            handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.loadImage(file);
+                }
+            }
+
+            loadImage(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.previewImage.src = e.target.result;
+                    this.previewImage.style.display = 'block';
+                    this.originalImage = new Image();
+                    this.originalImage.src = e.target.result;
+                    this.checkStartConditions();
+                };
+                reader.readAsDataURL(file);
+            }
+
+            selectDifficulty(button) {
+                this.difficultyBtns.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                this.rows = parseInt(button.dataset.rows);
+                this.cols = parseInt(button.dataset.cols);
+                this.checkStartConditions();
+            }
+
+            checkStartConditions() {
+                if (this.originalImage && this.rows > 0 && this.cols > 0) {
+                    this.startBtn.disabled = false;
+                } else {
+                    this.startBtn.disabled = true;
+                }
+            }
+
+            startGame() {
+                if (!this.originalImage || this.rows === 0 || this.cols === 0) return;
+
+                this.setupSection.style.display = 'none';
+                this.gameSection.style.display = 'block';
+                this.completionSection.style.display = 'none';
+                
+                this.createPuzzle();
+                this.startTimer();
+                this.isGameStarted = true;
+            }
+
+            createPuzzle() {
+                this.puzzleContainer.innerHTML = '';
+                this.puzzleContainer.style.gridTemplateColumns = `repeat(${this.cols}, 1fr)`;
+                this.puzzleContainer.style.gridTemplateRows = `repeat(${this.rows}, 1fr)`;
+                this.puzzleContainer.style.width = '500px';
+                this.puzzleContainer.style.height = '400px';
+
+                this.pieces = [];
+                this.correctPieces.clear();
+                
+                const totalPieces = this.rows * this.cols;
+                const pieceWidth = 500 / this.cols;
+                const pieceHeight = 400 / this.rows;
+
+                for (let i = 0; i < totalPieces; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'puzzle-piece';
+                    piece.dataset.index = i;
+                    piece.dataset.correctPosition = i;
+                    
+                    const row = Math.floor(i / this.cols);
+                    const col = i % this.cols;
+                    
+                    piece.style.backgroundImage = `url('${this.originalImage.src}')`;
+                    piece.style.backgroundPosition = `-${col * pieceWidth}px -${row * pieceHeight}px`;
+                    piece.style.backgroundSize = '500px 400px';
+                    
+                    piece.addEventListener('click', () => this.selectPiece(piece));
+                    
+                    this.pieces.push(piece);
+                    this.puzzleContainer.appendChild(piece);
+                }
+
+                this.shufflePieces();
+            }
+
+            shufflePieces() {
+                const piecesArray = Array.from(this.puzzleContainer.children);
+                
+                for (let i = piecesArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    this.puzzleContainer.appendChild(piecesArray[j]);
+                }
+                
+                this.updatePiecePositions();
+            }
+
+            updatePiecePositions() {
+                const pieces = Array.from(this.puzzleContainer.children);
+                pieces.forEach((piece, index) => {
+                    piece.dataset.currentPosition = index;
+                    this.checkPieceCorrectness(piece);
+                });
+            }
+
+            selectPiece(piece) {
+                if (!this.isGameStarted) return;
+
+                if (this.selectedPiece === piece) {
+                    piece.classList.remove('selected');
+                    this.selectedPiece = null;
+                    return;
+                }
+
+                if (this.selectedPiece) {
+                    this.swapPieces(this.selectedPiece, piece);
+                    this.selectedPiece.classList.remove('selected');
+                    this.selectedPiece = null;
+                } else {
+                    piece.classList.add('selected');
+                    this.selectedPiece = piece;
+                }
+            }
+
+            swapPieces(piece1, piece2) {
+                const parent = piece1.parentNode;
+                const index1 = Array.from(parent.children).indexOf(piece1);
+                const index2 = Array.from(parent.children).indexOf(piece2);
+                
+                if (index1 < index2) {
+                    parent.insertBefore(piece2, piece1);
+                    parent.insertBefore(piece1, parent.children[index2]);
+                } else {
+                    parent.insertBefore(piece1, piece2);
+                    parent.insertBefore(piece2, parent.children[index1]);
+                }
+                
+                this.updatePiecePositions();
+                this.checkGameCompletion();
+            }
+
+            checkPieceCorrectness(piece) {
+                const currentPos = parseInt(piece.dataset.currentPosition);
+                const correctPos = parseInt(piece.dataset.correctPosition);
+                
+                if (currentPos === correctPos) {
+                    piece.classList.add('correct');
+                    piece.classList.remove('incorrect');
+                    this.correctPieces.add(piece);
+                } else {
+                    piece.classList.remove('correct');
+                    piece.classList.add('incorrect');
+                    this.correctPieces.delete(piece);
+                }
+            }
+
+            checkGameCompletion() {
+                if (this.correctPieces.size === this.rows * this.cols) {
+                    this.completeGame();
+                }
+            }
+
+            completeGame() {
+                this.stopTimer();
+                this.isGameStarted = false;
+                
+                this.gameSection.style.display = 'none';
+                this.completionSection.style.display = 'block';
+                
+                this.shareImage.src = this.originalImage.src;
+                this.shareDifficulty.textContent = `${this.rows}×${this.cols}`;
+                this.shareTime.textContent = this.timer.textContent;
+            }
+
+            startTimer() {
+                this.startTime = new Date();
+                this.timerInterval = setInterval(() => {
+                    const currentTime = new Date();
+                    const elapsed = Math.floor((currentTime - this.startTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                    const seconds = (elapsed % 60).toString().padStart(2, '0');
+                    this.timer.textContent = `${minutes}:${seconds}`;
+                }, 1000);
+            }
+
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            restartGame() {
+                this.stopTimer();
+                this.createPuzzle();
+                this.startTimer();
+                this.isGameStarted = true;
+            }
+
+            newGame() {
+                this.stopTimer();
+                this.gameSection.style.display = 'none';
+                this.setupSection.style.display = 'block';
+                this.completionSection.style.display = 'none';
+                this.isGameStarted = false;
+            }
+
+            playAgain() {
+                this.completionSection.style.display = 'none';
+                this.setupSection.style.display = 'block';
+                this.previewImage.style.display = 'block';
+            }
+
+            shareResult() {
+                const shareText = `我完成了拼图游戏！\n难度: ${this.rows}×${this.cols}\n完成时间: ${this.timer.textContent}`;
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: '拼图游戏完成',
+                        text: shareText,
+                        url: window.location.href
+                    });
+                } else if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareText).then(() => {
+                        alert('分享内容已复制到剪贴板！');
+                    });
+                } else {
+                    alert(shareText);
+                }
+            }
+
+            loadLeaderboard() {
+                const saved = localStorage.getItem('puzzleLeaderboard');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            saveLeaderboard() {
+                localStorage.setItem('puzzleLeaderboard', JSON.stringify(this.leaderboard));
+            }
+
+            saveScore() {
+                const username = this.username.value.trim();
+                if (!username) {
+                    alert('请输入用户名！');
+                    return;
+                }
+
+                const timeInSeconds = this.calculateTimeInSeconds();
+                const difficulty = `${this.rows}×${this.cols}`;
+                
+                const score = {
+                    username: username,
+                    time: timeInSeconds,
+                    timeDisplay: this.timer.textContent,
+                    difficulty: difficulty,
+                    date: new Date().toISOString()
+                };
+
+                this.leaderboard.push(score);
+                this.saveLeaderboard();
+                
+                this.usernameInput.style.display = 'none';
+                this.leaderboardSection.style.display = 'block';
+                this.displayLeaderboard();
+            }
+
+            calculateTimeInSeconds() {
+                const timeParts = this.timer.textContent.split(':');
+                return parseInt(timeParts[0]) * 60 + parseInt(timeParts[1]);
+            }
+
+            displayLeaderboard() {
+                this.displayTimeLeaderboard();
+                this.displayDifficultyLeaderboard();
+            }
+
+            displayTimeLeaderboard() {
+                const sortedByTime = [...this.leaderboard].sort((a, b) => a.time - b.time);
+                this.timeLeaderboard.innerHTML = this.generateLeaderboardHTML(sortedByTime, 'time');
+            }
+
+            displayDifficultyLeaderboard() {
+                const sortedByDifficulty = [...this.leaderboard].sort((a, b) => {
+                    const aDiff = parseInt(a.difficulty.split('×')[0]) * parseInt(a.difficulty.split('×')[1]);
+                    const bDiff = parseInt(b.difficulty.split('×')[0]) * parseInt(b.difficulty.split('×')[1]);
+                    return bDiff - aDiff || a.time - b.time;
+                });
+                this.difficultyLeaderboard.innerHTML = this.generateLeaderboardHTML(sortedByDifficulty, 'difficulty');
+            }
+
+            generateLeaderboardHTML(scores, type) {
+                if (scores.length === 0) {
+                    return '<div class="leaderboard-item">暂无记录</div>';
+                }
+
+                return scores.slice(0, 10).map((score, index) => `
+                    <div class="leaderboard-item">
+                        <span class="rank">${index + 1}</span>
+                        <span class="username">${score.username}</span>
+                        ${type === 'time' ? `<span class="time">${score.timeDisplay}</span>` : ''}
+                        <span class="difficulty">${score.difficulty}</span>
+                    </div>
+                `).join('');
+            }
+
+            switchTab(button) {
+                this.tabBtns.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const tab = button.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                if (tab === 'time') {
+                    this.timeLeaderboard.classList.add('active');
+                } else {
+                    this.difficultyLeaderboard.classList.add('active');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new PuzzleGame();
+        });
+    </script>
+</body>
+</html>
